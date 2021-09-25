@@ -88,19 +88,23 @@ var Menu = []Food{
 }
 
 type Order struct {
-	OrderId            int
-	Priority           int
-	MenuItemIds        []int
-	MaxPreparationTime float32
+	TableId            int     `json:"table_id"`
+	OrderId            int     `json:"order_id"`
+	Priority           int     `json:"priority"`
+	MenuItemIds        []int   `json:"items"`
+	MaxPreparationTime float32 `json:"max_wait"`
+	PickUpTime         int64   `json:"pick_up_time"`
 }
 
-func CreateOrder() Order {
+func CreateOrder(tableId int) Order {
 
 	menuItemIds, maxPrepTime := getMenuItems()
 	return Order{
+		TableId:            tableId,
 		OrderId:            RandomizeNr(10000),
 		MenuItemIds:        menuItemIds,
 		MaxPreparationTime: maxPrepTime,
+		PickUpTime:         time.Now().Unix(),
 	}
 }
 func findMaxPrepTime(arr []float32) (max float32) {
@@ -115,7 +119,7 @@ func findMaxPrepTime(arr []float32) (max float32) {
 func GetMaxPrepTime(foodsId []int, quantityFoods int) float32 {
 	var maxPrepTimeFoods []float32
 	for i := 0; i <= quantityFoods; i++ {
-		maxPrepTimeFoods = append(maxPrepTimeFoods,Menu[foodsId[i]-1].preparationTime)
+		maxPrepTimeFoods = append(maxPrepTimeFoods, Menu[foodsId[i]-1].preparationTime)
 	}
 	return findMaxPrepTime(maxPrepTimeFoods)
 }
@@ -126,7 +130,7 @@ func getMenuItems() ([]int, float32) {
 	var maxPrepTime float32
 
 	for i := 0; i <= quantityFoods; i++ {
-		foodsId = append(foodsId,RandomizeNr(10))
+		foodsId = append(foodsId, RandomizeNr(10))
 	}
 	maxPrepTime = GetMaxPrepTime(foodsId, quantityFoods)
 
@@ -167,14 +171,12 @@ func MakeOrder(table *Table) *Table {
 	return &Table{
 		TableId: table.TableId,
 		State:   waitingServeOrder,
-		Order:   CreateOrder(),
+		Order:   CreateOrder(table.TableId),
 	}
 }
 
 func OrderServed(table *Table) *Table {
-return &Table{
-
-}
+	return &Table{}
 }
 func Randomizer() {
 	var res bool
@@ -202,6 +204,6 @@ func main() {
 	fmt.Printf("%+v\n", table)
 	table = WaitingMakeOrder(table)
 	fmt.Printf("%+v\n", table)
-	table= MakeOrder(table)
+	table = MakeOrder(table)
 	fmt.Printf("%+v\n", table)
 }
