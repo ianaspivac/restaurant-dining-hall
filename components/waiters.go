@@ -19,20 +19,24 @@ type Waiter struct {
 type OrderToSend struct {
 	TableId            int     `json:"table_id"`
 	OrderId            int     `json:"order_id"`
+	WaiterId           int     `json:"waiter_id"`
 	Priority           int     `json:"priority"`
 	MenuItemIds        []int   `json:"items"`
 	MaxPreparationTime float32 `json:"max_wait"`
 	PickUpTime         int64   `json:"pick_up_time"`
 }
-func InitWaiter()*Waiter{
+
+func InitWaiter() *Waiter {
 	return &Waiter{
 		ServedTable: false,
 	}
 }
-func GetOrder(table *Table) *OrderToSend {
+
+func GetOrder(table *Table, waiterId int) *OrderToSend {
 	return &OrderToSend{
 		TableId:            table.TableId,
 		OrderId:            table.Order.OrderId,
+		WaiterId:          waiterId,
 		Priority:           table.Order.Priority,
 		MenuItemIds:        table.Order.MenuItemIds,
 		MaxPreparationTime: table.Order.MaxPreparationTime,
@@ -45,9 +49,9 @@ func UpdateWaiter(order *OrderToSend) *Waiter {
 		OrderToSend: order,
 	}
 }
-func takingOrder(table *Table) (*Table, *Waiter) {
+func takingOrder(table *Table, waiterId int) (*Table, *Waiter) {
 	var newTable = MakeOrder(table)
-	var updateWaiter = UpdateWaiter(GetOrder(newTable))
+	var updateWaiter = UpdateWaiter(GetOrder(newTable, waiterId))
 	return newTable, updateWaiter
 }
 func WaitersSupervise(nrWaiters int, nrTables int, tables [5]*Table, waiters [2]*Waiter) {
@@ -59,28 +63,32 @@ func WaitersSupervise(nrWaiters int, nrTables int, tables [5]*Table, waiters [2]
 		go func(i int) {
 			defer wg.Done()
 			for {
-				getRandomTable = util.RandomizeNr(nrTables - 1)
-				if tables[getRandomTable].State == 0 {
-					tables[getRandomTable] = WaitingMakeOrder(tables[getRandomTable])
+				m.Lock()
+				getRandomTable = util.RandomizeNr(nrTables)
+				if tables[getRandomTable-1].State == 0 {
+					tables[getRandomTable-1] = WaitingMakeOrder(tables[getRandomTable-1])
+					fmt.Printf("Table %v is waiting  \n",tables[getRandomTable-1].TableId)
 				}
+				m.Unlock()
 				m.Lock()
 				for j := 0; j < nrTables; j++ {
-					if tables[j].State == 1 && waiters[i].ServedTable == false {
+					if tables[j].State == 1 {
 						time.Sleep(1 * time.Second)
-						tables[j], waiters[i] = takingOrder(tables[j])
-						fmt.Printf("%+v\n", i)
+						tables[j], waiters[i] = takingOrder(tables[j], i+1)
+						fmt.Printf("Waiter %v picked order\n",i)
 						fmt.Printf("%+v\n", waiters[i].OrderToSend)
 
 						jsonBody, err := json.Marshal(waiters[i].OrderToSend)
-						if err != nil{
+						if err != nil {
 							log.Panic(err)
 						}
-						contentType:= "application/json"
+						contentType := "application/json"
 						_, err = http.Post("http://localhost:8081/order", contentType, bytes.NewReader(jsonBody))
 						if err != nil {
 							return
 						}
 					}
+
 				}
 				m.Unlock()
 			}
@@ -88,4 +96,3 @@ func WaitersSupervise(nrWaiters int, nrTables int, tables [5]*Table, waiters [2]
 	}
 	wg.Wait()
 }
-

@@ -27,7 +27,7 @@ func InitTable(tableId int) *Table {
 }
 
 func WaitingMakeOrder(table *Table) *Table {
-	defer time.Sleep(time.Duration(util.RandomizeNr(5)) * time.Second)
+	defer time.Sleep(time.Duration(util.RandomizeNr(2)) * time.Second)
 	return &Table{
 		TableId: table.TableId,
 		State:   waitingMakeOrder,
