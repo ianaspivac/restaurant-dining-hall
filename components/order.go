@@ -11,7 +11,7 @@ type Order struct {
 	MaxPreparationTime float32
 }
 
-func CreateOrder(tableId int) Order {
+func CreateOrder() Order {
 
 	menuItemIds, maxPrepTime := getMenuItems()
 	return Order{

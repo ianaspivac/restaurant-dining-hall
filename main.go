@@ -2,42 +2,57 @@ package main
 
 import (
 	component "dinning-hall/components"
+	"dinning-hall/util"
 	"fmt"
 	"math/rand"
 	"sync"
 	"time"
 )
 
-func takingOrder(table *component.Table) (*component.Table, *component.OrderToSend) {
+func takingOrder(table *component.Table) (*component.Table, *component.Waiter) {
 	var newTable = component.MakeOrder(table)
-	return newTable, component.GetOrder(newTable)
-
+	var updateWaiter = component.UpdateWaiter(component.GetOrder(newTable))
+	return newTable, updateWaiter
 }
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	const nrTables int = 5
+	const nrWaiters int = 2
 	var tables [nrTables]*component.Table
+	var waiters [nrWaiters]*component.Waiter
 
 	for i := 0; i < nrTables; i++ {
 		tables[i] = component.InitTable(i + 1)
-		//fmt.Printf("%+v\n", tables[i])
 	}
-	var wg sync.WaitGroup
-	wg.Add(nrTables)
+	for i := 0; i < nrWaiters; i++ {
+		waiters[i] = component.InitWaiter()
+	}
 
-	for i := 0; i < nrTables; i++ {
+	var getRandomTable int
+	var wg sync.WaitGroup
+	wg.Add(nrWaiters)
+	for i := 0; i < nrWaiters; i++ {
 		go func(i int) {
 			defer wg.Done()
-			tables[i] = component.WaitingMakeOrder(tables[i])
-			fmt.Printf("%+v\n", tables[i])
+			for {
+				getRandomTable = util.RandomizeNr(nrTables - 1)
+				if tables[getRandomTable].State == 0 {
+					tables[getRandomTable] = component.WaitingMakeOrder(tables[getRandomTable])
+				}
+				var m sync.Mutex
+				for j := 0; j < nrTables; j++ {
+					m.Lock()
+					if tables[j].State == 1 && waiters[i].ServedTable == false {
+						time.Sleep(1 * time.Second)
+						tables[j], waiters[i] = takingOrder(tables[j])
+						fmt.Printf("%+v\n", i)
+						fmt.Printf("%+v\n", waiters[i].OrderToSend)
+					}
+					m.Unlock()
+				}
+			}
 		}(i)
 	}
 	wg.Wait()
-
-	//var orderToSend *component.OrderToSend
-
-	//table, orderToSend = takingOrder(table)
-
-	//fmt.Printf("%+v\n", orderToSend)
 
 }
