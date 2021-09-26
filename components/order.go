@@ -2,27 +2,23 @@ package components
 
 import (
 	"dinning-hall/util"
-	"time"
 )
 
 type Order struct {
-	TableId            int     `json:"table_id"`
-	OrderId            int     `json:"order_id"`
-	Priority           int     `json:"priority"`
-	MenuItemIds        []int   `json:"items"`
-	MaxPreparationTime float32 `json:"max_wait"`
-	PickUpTime         int64   `json:"pick_up_time"`
+	OrderId            int
+	Priority           int
+	MenuItemIds        []int
+	MaxPreparationTime float32
 }
 
 func CreateOrder(tableId int) Order {
 
 	menuItemIds, maxPrepTime := getMenuItems()
 	return Order{
-		TableId:            tableId,
 		OrderId:            util.RandomizeNr(10000),
 		MenuItemIds:        menuItemIds,
 		MaxPreparationTime: maxPrepTime,
-		PickUpTime:         time.Now().Unix(),
+		Priority: 1,
 	}
 }
 func findMaxPrepTime(arr []float32) (max float32) {

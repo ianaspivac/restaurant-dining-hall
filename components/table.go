@@ -1,4 +1,10 @@
 package components
+
+import (
+	"dinning-hall/util"
+	"time"
+)
+
 type Table struct {
 	TableId int
 	State   State
@@ -24,6 +30,7 @@ func GetState() {
 }
 
 func WaitingMakeOrder(table *Table) *Table {
+	defer time.Sleep(time.Duration(util.RandomizeNr(5)) * time.Second)
 	return &Table{
 		TableId: table.TableId,
 		State:   waitingMakeOrder,
@@ -38,5 +45,8 @@ func MakeOrder(table *Table) *Table {
 }
 
 func OrderServed(table *Table) *Table {
-	return &Table{}
+	return &Table{
+		TableId: table.TableId,
+		State:   free,
+	}
 }
