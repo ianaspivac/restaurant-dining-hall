@@ -8,10 +8,6 @@ import (
 	"net/http"
 	"time"
 )
-const nrTables int = 5
-const nrWaiters int = 2
-var tables [nrTables]*component.Table
-var waiters [nrWaiters]*component.Waiter
 
 func recieveOrder(c *gin.Context) {
 	var order *component.OrderToSend
@@ -19,7 +15,7 @@ func recieveOrder(c *gin.Context) {
 		return
 	}
 
-	component.OrderServed(tables[order.TableId-1])
+	component.GetTable(order.TableId-1).SetState(component.Free)
 	fmt.Printf("Recieved prepared order: %+v \n",order)
 	c.IndentedJSON(http.StatusCreated, order)
 }
@@ -30,17 +26,10 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 
+	component.InitTable()
+	component.InitWaiter()
+	component.TableSupervise()
+	component.WaitersSupervise()
 
-	for i := 0; i < nrTables; i++ {
-		tables[i] = component.InitTable(i + 1)
-	}
-	for i := 0; i < nrWaiters; i++ {
-		waiters[i] = component.InitWaiter()
-	}
-
-
-	go func() {
-		component.WaitersSupervise(nrWaiters,nrTables,tables,waiters)
-	}()
-	router.Run("localhost:8080")
+	router.Run(":8080")
 }
