@@ -1,6 +1,15 @@
 package components
 
-import "time"
+import (
+	"bytes"
+	"dinning-hall/util"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"sync"
+	"time"
+)
 
 type Waiter struct {
 	ServedTable bool
@@ -35,5 +44,48 @@ func UpdateWaiter(order *OrderToSend) *Waiter {
 		ServedTable: true,
 		OrderToSend: order,
 	}
+}
+func takingOrder(table *Table) (*Table, *Waiter) {
+	var newTable = MakeOrder(table)
+	var updateWaiter = UpdateWaiter(GetOrder(newTable))
+	return newTable, updateWaiter
+}
+func WaitersSupervise(nrWaiters int, nrTables int, tables [5]*Table, waiters [2]*Waiter) {
+	var getRandomTable int
+	var wg sync.WaitGroup
+	wg.Add(nrWaiters)
+	var m sync.Mutex
+	for i := 0; i < nrWaiters; i++ {
+		go func(i int) {
+			defer wg.Done()
+			for {
+				getRandomTable = util.RandomizeNr(nrTables - 1)
+				if tables[getRandomTable].State == 0 {
+					tables[getRandomTable] = WaitingMakeOrder(tables[getRandomTable])
+				}
+				m.Lock()
+				for j := 0; j < nrTables; j++ {
+					if tables[j].State == 1 && waiters[i].ServedTable == false {
+						time.Sleep(1 * time.Second)
+						tables[j], waiters[i] = takingOrder(tables[j])
+						fmt.Printf("%+v\n", i)
+						fmt.Printf("%+v\n", waiters[i].OrderToSend)
+
+						jsonBody, err := json.Marshal(waiters[i].OrderToSend)
+						if err != nil{
+							log.Panic(err)
+						}
+						contentType:= "application/json"
+						_, err = http.Post("http://localhost:8081/order", contentType, bytes.NewReader(jsonBody))
+						if err != nil {
+							return
+						}
+					}
+				}
+				m.Unlock()
+			}
+		}(i)
+	}
+	wg.Wait()
 }
 
