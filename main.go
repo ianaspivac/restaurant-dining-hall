@@ -10,11 +10,12 @@ import (
 )
 
 func recieveOrder(c *gin.Context) {
-	var order *component.OrderToSend
+	var order *component.OrderPrepared
 	if err := c.BindJSON(&order); err != nil {
 		return
 	}
 
+	component.GetRating(order.MaxPreparationTime,order.CookingTime)
 	component.GetTable(order.TableId-1).SetState(component.Free)
 	fmt.Printf("Recieved prepared order: %+v \n",order)
 	c.IndentedJSON(http.StatusCreated, order)

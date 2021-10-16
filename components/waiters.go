@@ -30,7 +30,7 @@ type OrderToSend struct {
 func InitWaiter() {
 	for idx, _ := range Waiters {
 		Waiters[idx] = &Waiter{
-			id:           idx,
+			id:           idx+1,
 			waiterTables: tables,
 		}
 	}
@@ -46,8 +46,7 @@ func (w *Waiter) Supervise() {
 
 				order := val.GetOrder()
 
-				fmt.Printf("Waiter %d picked order from table %d\n", w.id, val.TableId)
-				fmt.Printf("%+v\n", order)
+				fmt.Printf("Waiter %d picked order from table %d: %+v\n", w.id, val.TableId,order)
 
 				sendOrder := &OrderToSend{
 					Order: order,
@@ -63,7 +62,7 @@ func (w *Waiter) Supervise() {
 				}
 
 				contentType := "application/json"
-				_, err = http.Post("http://kitchen:8081/order", contentType, bytes.NewReader(jsonBody))
+				_, err = http.Post("http://localhost:8081/order", contentType, bytes.NewReader(jsonBody))
 				if err != nil {
 					log.Panic(err)
 				}
