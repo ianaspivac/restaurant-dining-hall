@@ -11,13 +11,27 @@ type Order struct {
 	MaxPreparationTime float32 `json:"max_wait"`
 }
 
+type CookFood struct {
+	FoodId int `json:"food_id"`
+	CookId int `json:"cook_id"`
+}
+
+type OrderPrepared struct {
+	Order
+	WaiterId       int        `json:"waiter_id"`
+	TableId        int        `json:"table_id"`
+	PickUpTime     int64      `json:"pick_up_time"`
+	CookingTime    int64      `json:"cooking_time"`
+	CookingDetails []CookFood `json:"cooking_details"`
+}
+
 func CreateOrder() Order {
 	menuItemIds, maxPrepTime := getMenuItems()
 	return Order{
 		OrderId:            util.RandomizeNr(10000),
 		MenuItemIds:        menuItemIds,
 		MaxPreparationTime: maxPrepTime,
-		Priority:           1,
+		Priority:           util.RandomizeNr(5),
 	}
 }
 

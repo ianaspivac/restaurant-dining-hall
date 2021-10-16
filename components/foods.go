@@ -7,6 +7,8 @@ type Food struct{
 	complexity int
 	cookingApparatus string
 }
+
+
 var Menu = []Food {
 	{
 		id: 1,

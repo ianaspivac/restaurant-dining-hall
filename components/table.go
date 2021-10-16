@@ -86,7 +86,7 @@ func generateOrders(){
 			}
 		}
 
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 3)
 	}
 }
 
